@@ -4,13 +4,14 @@ const express = require ('express');
 const router = express.Router();
 const verificarToken = require('../middlewares/verificarToken');
 const verificarRol = require('../middlewares/verificarRol');
+const { validarPedidoCompleto } = require('../middlewares/validacion');
 
 router.get('/', verificarToken, pedidoController.listarP);
 router.get('/reporte', verificarToken, verificarRol('admin', 'encargada'), pedidoController.reporteP);
 router.get('/reporte/pdf', verificarToken, verificarRol('admin', 'encargada'), pdfController.generarReportePdf);
 router.get('/:id', verificarToken, pedidoController.obtenerDetalleP);
 router.post('/', verificarToken, pedidoController.crearP);
-router.post('/completo', verificarToken, pedidoController.crearCompletoP);
+router.post('/completo', verificarToken, validarPedidoCompleto, pedidoController.crearCompletoP);
 router.post('/anotar', verificarToken, pedidoController.anotarP);
 router.post('/quitar', verificarToken, pedidoController.quitarP);
 

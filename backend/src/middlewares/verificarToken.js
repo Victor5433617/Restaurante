@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-function verificarToken(req, res, next){
-    const authHeader  = req.headers['authorization'];
+function verificarToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
 
-    if(!authHeader){
-     return res.status(401).json({succes: false, error: 'Token no proporcionado'});
+    if (!authHeader) {
+        return res.status(401).json({ success: false, error: 'Token no proporcionado' });
     }
     const token = authHeader.split(' ')[1];
 
@@ -13,10 +13,8 @@ function verificarToken(req, res, next){
         req.usuario = payload;
         next();
     } catch (error) {
-        return res.status(401).json({succes: false, error: 'Token invalido'});
+        return res.status(401).json({ success: false, error: 'Token invalido' });
     }
-
 }
-
 
 module.exports = verificarToken;
