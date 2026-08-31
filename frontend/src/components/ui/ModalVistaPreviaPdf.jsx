@@ -20,7 +20,7 @@ export default function ModalVistaPreviaPdf({ url, nombreArchivo, onCerrar }) {
               onClick={onCerrar}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
             >
-              <X className="w-4.5 h-4.5" />
+              <X className="w-[18px] h-[18px]" />
             </button>
           </div>
         </div>
@@ -29,3 +29,4 @@ export default function ModalVistaPreviaPdf({ url, nombreArchivo, onCerrar }) {
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, ChefHat, Search, Inbox, X, Pencil, LogOut } from 'lucide-react';
+import { ClipboardList, ChefHat, Search, Pencil, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as empresaService from '../services/empresaService';
 import * as funcionarioService from '../services/funcionarioService';
@@ -11,6 +11,9 @@ import Alert from './ui/Alert';
 import Badge from './ui/Badge';
 import Button from './ui/Button';
 import Input from './ui/Input';
+import Select from './ui/Select';
+import Modal from './ui/Modal';
+import EmptyState from './ui/EmptyState';
 import { hoyISO } from '../utils/fechas';
 
 const fechaLarga = () => {
@@ -61,8 +64,8 @@ export default function FormularioPedidoDiario() {
       try {
         const todosFuncionarios = await funcionarioService.listarFuncionarios();
         setFuncionarios(todosFuncionarios);
-      } catch (error) {
-        console.log(error);
+      } catch {
+        // sin cambio silencioso durante polling
       }
     }, 10000);
     return () => clearInterval(intervalo);
@@ -168,8 +171,7 @@ export default function FormularioPedidoDiario() {
     return <Spinner texto="Preparando el pedido de hoy..." />;
   }
 
-  const clasesSelect =
-    'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:ring-2 focus:ring-brand-200 focus:border-brand-400';
+  const opcionesEmpresa = empresas.map((e) => ({ valor: String(e.id), etiqueta: e.nombre }));
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
@@ -188,24 +190,15 @@ export default function FormularioPedidoDiario() {
       />
 
       {usuario.rol === 'admin' && (
-        <div>
-          <label htmlFor="empresa" className="block text-sm font-medium text-stone-600 mb-1.5">
-            Empresa
-          </label>
-          <select
-            id="empresa"
-            value={empresaId}
-            onChange={(e) => setEmpresaId(e.target.value)}
-            className={`${clasesSelect} sm:max-w-xs`}
-          >
-            <option value="">Elegir empresa...</option>
-            {empresas.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          id="empresa"
+          label="Empresa"
+          value={empresaId}
+          onChange={(e) => setEmpresaId(e.target.value)}
+          opciones={opcionesEmpresa}
+          placeholder="Elegir empresa..."
+          className="sm:max-w-xs"
+        />
       )}
 
       {error && <Alert tipo="error">{error}</Alert>}
@@ -224,16 +217,15 @@ export default function FormularioPedidoDiario() {
 
           <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
             {funcionariosEmpresa.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-stone-400">
-                <Inbox className="w-8 h-8" />
-                <p className="text-sm">
-                  {empresaId
+              <EmptyState
+                mensaje={
+                  empresaId
                     ? busqueda
                       ? 'No se encontraron funcionarios con ese nombre.'
                       : 'Esta empresa todavía no tiene funcionarios cargados.'
-                    : 'Elegí una empresa para ver sus funcionarios.'}
-                </p>
-              </div>
+                    : 'Elegí una empresa para ver sus funcionarios.'
+                }
+              />
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -338,19 +330,8 @@ export default function FormularioPedidoDiario() {
       </div>
 
       {modalFuncionario && (
-        <div className="fixed inset-0 z-50 bg-espresso-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-stone-900">{modalFuncionario.nombre_completo}</h2>
-              <button
-                onClick={cerrarModal}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
-            </div>
-
-            {menu.length === 0 ? (
+        <Modal abierto={!!modalFuncionario} onCerrar={cerrarModal} titulo={modalFuncionario.nombre_completo}>
+          {menu.length === 0 ? (
               <Alert tipo="aviso">Todavía no se cargó el menú de hoy.</Alert>
             ) : (
               <div className="space-y-2">
@@ -422,8 +403,7 @@ export default function FormularioPedidoDiario() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

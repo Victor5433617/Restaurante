@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ClipboardList, Inbox, Pencil, X } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Pencil } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as pedidoService from '../services/pedidoService';
 import * as funcionarioService from '../services/funcionarioService';
@@ -12,6 +12,8 @@ import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Modal from '../components/ui/Modal';
+import EmptyState from '../components/ui/EmptyState';
 import { formatoLargo, fechaISO } from '../utils/fechas';
 
 export default function PedidoDetallePage() {
@@ -134,7 +136,7 @@ export default function PedidoDetallePage() {
   }
 
   return (
-    <div className="p-4 sm:p-6 max-w-2xl mx-auto space-y-4">
+    <div className="space-y-6">
       <Link to="/pedidos" className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800 transition">
         <ArrowLeft className="w-4 h-4" />
         Volver a pedidos
@@ -150,10 +152,7 @@ export default function PedidoDetallePage() {
         titulo={`${pedido.detalles.length} de ${filas.length} ${filas.length === 1 ? 'funcionario anotado' : 'funcionarios anotados'}`}
       >
         {filas.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-stone-400">
-            <Inbox className="w-8 h-8" />
-            <p className="text-sm">Esta empresa todavía no tiene funcionarios cargados.</p>
-          </div>
+          <EmptyState mensaje="Esta empresa todavía no tiene funcionarios cargados." />
         ) : (
           <div className="overflow-x-auto -m-2 p-2">
             <table className="w-full text-sm">
@@ -167,7 +166,7 @@ export default function PedidoDetallePage() {
               </thead>
               <tbody>
                 {filas.map((f) => (
-                  <tr key={f.funcionario_id} className="border-b border-stone-100 last:border-0">
+                  <tr key={f.funcionario_id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                     <td className="py-2.5 pr-4 font-medium text-stone-800">{f.nombre_completo}</td>
                     <td className="py-2.5 pr-4 text-stone-600">
                       {f.opcion_numero ? (
@@ -196,19 +195,8 @@ export default function PedidoDetallePage() {
       </Card>
 
       {modalFuncionario && (
-        <div className="fixed inset-0 z-50 bg-espresso-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-stone-900">{modalFuncionario.nombre_completo}</h2>
-              <button
-                onClick={cerrarModal}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
-              >
-                <X className="w-4.5 h-4.5" />
-              </button>
-            </div>
-
-            {menuDelDia.length === 0 ? (
+        <Modal abierto={!!modalFuncionario} onCerrar={cerrarModal} titulo={modalFuncionario.nombre_completo}>
+          {menuDelDia.length === 0 ? (
               <Alert tipo="aviso">No se cargó el menú de ese día.</Alert>
             ) : (
               <div className="space-y-2">
@@ -270,8 +258,7 @@ export default function PedidoDetallePage() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

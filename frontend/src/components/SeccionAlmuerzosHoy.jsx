@@ -6,6 +6,7 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import Badge from './ui/Badge';
 import Alert from './ui/Alert';
+import Spinner from './ui/Spinner';
 import { hoyISO, fechaISO, formatoLargo } from '../utils/fechas';
 
 export default function SeccionAlmuerzosHoy({ empresa }) {
@@ -91,7 +92,7 @@ export default function SeccionAlmuerzosHoy({ empresa }) {
       )}
 
       {cargando ? (
-        <p className="text-stone-500 text-sm">Cargando...</p>
+        <Spinner texto="Cargando pedidos..." />
       ) : filas.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-8 text-stone-400">
           <Inbox className="w-8 h-8" />
@@ -114,7 +115,7 @@ export default function SeccionAlmuerzosHoy({ empresa }) {
               </thead>
               <tbody>
                 {filas.map((f) => (
-                  <tr key={f.funcionario_id} className="border-b border-stone-100 last:border-0">
+                  <tr key={f.funcionario_id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                     <td className="py-2.5 pr-4 font-medium text-stone-800">{f.nombre_completo}</td>
                     <td className="py-2.5 pr-4 text-stone-600">
                       {f.opcion_numero ? (

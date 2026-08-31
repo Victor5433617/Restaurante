@@ -40,7 +40,7 @@ const ITEMS_EMPRESA = [
 function LogoMarca() {
   return (
     <span className="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-sm shrink-0">
-      <UtensilsCrossed className="w-4.5 h-4.5" />
+      <UtensilsCrossed className="w-[18px] h-[18px]" />
     </span>
   );
 }
@@ -99,7 +99,7 @@ export default function AppShell({ children }) {
                       : 'text-stone-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <item.icono className="w-4.5 h-4.5 shrink-0" />
+                  <item.icono className="w-[18px] h-[18px] shrink-0" />
                   {item.etiqueta}
                 </NavLink>
               ))}
@@ -117,7 +117,7 @@ export default function AppShell({ children }) {
               title="Cerrar sesión"
               className="w-9 h-9 rounded-lg flex items-center justify-center text-stone-400 hover:text-white hover:bg-white/10 transition"
             >
-              <LogOut className="w-4.5 h-4.5" />
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
           </div>
         </header>
@@ -146,7 +146,7 @@ export default function AppShell({ children }) {
               to="/"
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-300 hover:text-white hover:bg-white/10 transition mb-1"
             >
-              <ArrowLeft className="w-4.5 h-4.5 shrink-0" />
+              <ArrowLeft className="w-[18px] h-[18px] shrink-0" />
               Volver a Empresas
             </Link>
           )}
@@ -160,7 +160,7 @@ export default function AppShell({ children }) {
                   : 'text-stone-300 hover:text-white hover:bg-white/10'
               }`}
             >
-              <item.icono className="w-4.5 h-4.5 shrink-0" />
+              <item.icono className="w-[18px] h-[18px] shrink-0" />
               {item.etiqueta}
             </NavLink>
           ))}
@@ -171,7 +171,7 @@ export default function AppShell({ children }) {
             onClick={salir}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-300 hover:text-white hover:bg-red-500/20 hover:text-red-200 transition"
           >
-            <LogOut className="w-4.5 h-4.5" />
+            <LogOut className="w-[18px] h-[18px]" />
             Cerrar sesión
           </button>
           <div className="flex items-center gap-2.5 px-3">
@@ -205,7 +205,7 @@ export default function AppShell({ children }) {
               title="Cerrar sesión"
               className="w-9 h-9 rounded-lg flex items-center justify-center text-stone-400 hover:text-white hover:bg-white/10 transition"
             >
-              <LogOut className="w-4.5 h-4.5" />
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
           </div>
         </header>
@@ -266,7 +266,7 @@ export default function AppShell({ children }) {
                 onClick={() => setMenuMas(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-700 hover:bg-brand-50 hover:text-brand-700 transition"
               >
-                <ArrowLeft className="w-4.5 h-4.5 text-stone-400" />
+                <ArrowLeft className="w-[18px] h-[18px] text-stone-400" />
                 Volver a Empresas
               </NavLink>
             )}
@@ -277,7 +277,7 @@ export default function AppShell({ children }) {
                 onClick={() => setMenuMas(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-stone-700 hover:bg-brand-50 hover:text-brand-700 transition"
               >
-                <item.icono className="w-4.5 h-4.5 text-stone-400" />
+                <item.icono className="w-[18px] h-[18px] text-stone-400" />
                 {item.etiqueta}
               </NavLink>
             ))}
@@ -286,7 +286,7 @@ export default function AppShell({ children }) {
               onClick={salir}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
             >
-              <LogOut className="w-4.5 h-4.5" />
+              <LogOut className="w-[18px] h-[18px]" />
               Cerrar sesión
             </button>
           </div>
@@ -295,3 +295,4 @@ export default function AppShell({ children }) {
     </div>
   );
 }
+

@@ -6,7 +6,7 @@ export default function Card({ titulo, subtitulo, icono: Icono, acciones, classN
           <div className="flex items-center gap-2.5 min-w-0">
             {Icono && (
               <span className="w-9 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                <Icono className="w-4.5 h-4.5" />
+                <Icono className="w-[18px] h-[18px]" />
               </span>
             )}
             <div className="min-w-0">
@@ -23,3 +23,4 @@ export default function Card({ titulo, subtitulo, icono: Icono, acciones, classN
     </section>
   );
 }
+

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, Inbox } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as pedidoService from '../services/pedidoService';
 import * as empresaService from '../services/empresaService';
@@ -9,6 +9,9 @@ import Spinner from '../components/ui/Spinner';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import Select from '../components/ui/Select';
+import Input from '../components/ui/Input';
+import EmptyState from '../components/ui/EmptyState';
 import ModalVistaPreviaPdf from '../components/ui/ModalVistaPreviaPdf';
 import { fechaISO, formatoCorto, lunesDe, sumarDias } from '../utils/fechas';
 
@@ -130,12 +133,15 @@ export default function ReportesPage({ empresaFija }) {
     return <Spinner texto="Generando reporte..." className="py-24" />;
   }
 
+  const opcionesEmpresa = empresas.map((e) => ({ valor: String(e.id), etiqueta: e.nombre }));
+
   return (
     <div className="space-y-6">
       {empresaFija ? (
         <h2 className="font-display text-lg font-semibold text-stone-800">Reportes</h2>
       ) : (
         <PageHeader
+          icono={FileDown}
           titulo="Reporte de consumo"
           subtitulo="Historial de almuerzos por empresa y fecha."
         />
@@ -144,49 +150,28 @@ export default function ReportesPage({ empresaFija }) {
       <Card>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {esAdmin && (
-            <div>
-              <label htmlFor="rep-empresa" className="block text-sm font-medium text-stone-600 mb-1.5">
-                Empresa
-              </label>
-              <select
-                id="rep-empresa"
-                value={filtroEmpresa}
-                onChange={(e) => setFiltroEmpresa(e.target.value)}
-                className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-              >
-                <option value="">Todas</option>
-                {empresas.map((e) => (
-                  <option key={e.id} value={e.id}>
-                    {e.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id="rep-empresa"
+              label="Empresa"
+              value={filtroEmpresa}
+              onChange={(e) => setFiltroEmpresa(e.target.value)}
+              opciones={[{ valor: '', etiqueta: 'Todas' }, ...opcionesEmpresa]}
+            />
           )}
-          <div>
-            <label htmlFor="rep-desde" className="block text-sm font-medium text-stone-600 mb-1.5">
-              Desde
-            </label>
-            <input
-              id="rep-desde"
-              type="date"
-              value={desde}
-              onChange={(e) => setDesde(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-            />
-          </div>
-          <div>
-            <label htmlFor="rep-hasta" className="block text-sm font-medium text-stone-600 mb-1.5">
-              Hasta
-            </label>
-            <input
-              id="rep-hasta"
-              type="date"
-              value={hasta}
-              onChange={(e) => setHasta(e.target.value)}
-              className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200"
-            />
-          </div>
+          <Input
+            id="rep-desde"
+            label="Desde"
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+          />
+          <Input
+            id="rep-hasta"
+            label="Hasta"
+            type="date"
+            value={hasta}
+            onChange={(e) => setHasta(e.target.value)}
+          />
           <div className="flex items-end gap-2">
             <Button
               variante="secundario"
@@ -208,10 +193,7 @@ export default function ReportesPage({ empresaFija }) {
 
       <Card titulo={`${filas.length} ${filas.length === 1 ? 'registro' : 'registros'}`}>
         {filas.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-stone-400">
-            <Inbox className="w-8 h-8" />
-            <p className="text-sm">No hay pedidos en el período seleccionado.</p>
-          </div>
+          <EmptyState mensaje="No hay pedidos en el período seleccionado." />
         ) : (
           <>
             <div className="overflow-x-auto -m-2 p-2">
@@ -226,7 +208,7 @@ export default function ReportesPage({ empresaFija }) {
                 </thead>
                 <tbody>
                   {filas.map((f) => (
-                    <tr key={f.id} className="border-b border-stone-100 last:border-0">
+                    <tr key={f.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                       <td className="py-3 pr-4 text-stone-700 tabular-nums">
                         {formatoCorto(f.fecha)}
                       </td>

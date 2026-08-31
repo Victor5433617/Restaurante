@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardList, Plus, Inbox, Building2 } from 'lucide-react';
+import { ClipboardList, Plus, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as pedidoService from '../services/pedidoService';
 import * as empresaService from '../services/empresaService';
@@ -9,6 +9,8 @@ import Spinner from '../components/ui/Spinner';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import EmptyState from '../components/ui/EmptyState';
 import { fechaISO, formatoCorto } from '../utils/fechas';
 
 export default function PedidosPage({ empresaFija }) {
@@ -81,25 +83,21 @@ export default function PedidosPage({ empresaFija }) {
 
       <Card>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-sm font-medium text-stone-600 shrink-0" htmlFor="filtro-desde">
-            Desde
-          </label>
-          <input
+          <Input
             id="filtro-desde"
+            label="Desde"
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 sm:max-w-[180px]"
+            className="sm:max-w-[180px]"
           />
-          <label className="text-sm font-medium text-stone-600 shrink-0" htmlFor="filtro-hasta">
-            Hasta
-          </label>
-          <input
+          <Input
             id="filtro-hasta"
+            label="Hasta"
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 sm:max-w-[180px]"
+            className="sm:max-w-[180px]"
           />
           <Button
             variante="fantasma"
@@ -122,10 +120,7 @@ export default function PedidosPage({ empresaFija }) {
       ) : (
         <Card titulo={`${filtrados.length} ${filtrados.length === 1 ? 'pedido' : 'pedidos'}`}>
           {filtrados.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-stone-400">
-              <Inbox className="w-8 h-8" />
-              <p className="text-sm">No hay pedidos para los filtros elegidos.</p>
-            </div>
+            <EmptyState mensaje="No hay pedidos para los filtros elegidos." />
           ) : (
             <div className="overflow-x-auto -m-2 p-2">
               <table className="w-full text-sm min-w-[520px]">
@@ -139,7 +134,7 @@ export default function PedidosPage({ empresaFija }) {
                 </thead>
                 <tbody>
                   {filtrados.map((p) => (
-                    <tr key={p.id} className="border-b border-stone-100 last:border-0">
+                    <tr key={p.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                       <td className="py-3 pr-4 font-medium text-stone-800">#{p.id}</td>
                       <td className="py-3 pr-4 text-stone-600 tabular-nums">
                         {formatoCorto(p.fecha)}

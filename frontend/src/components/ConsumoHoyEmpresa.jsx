@@ -6,18 +6,7 @@ import Card from './ui/Card';
 import Button from './ui/Button';
 import Alert from './ui/Alert';
 import ModalVistaPreviaPdf from './ui/ModalVistaPreviaPdf';
-
-const fechaISO = (valor) => {
-  const texto = String(valor);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return texto;
-  const d = new Date(valor);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate()
-  ).padStart(2, '0')}`;
-};
-
-const hoyISO = () => fechaISO(new Date());
+import { fechaISO, hoyISO } from '../utils/fechas';
 
 export default function ConsumoHoyEmpresa({ empresa }) {
   const [consumo, setConsumo] = useState(null);

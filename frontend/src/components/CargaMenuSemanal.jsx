@@ -18,6 +18,7 @@ import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
 import Alert from '../components/ui/Alert';
 import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 import {
   DIAS_INICIALES,
   lunesDe,
@@ -27,9 +28,6 @@ import {
   formatoCorto,
   etiquetaSemana,
 } from '../utils/fechas';
-
-const clasesInput =
-  'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200';
 
 const iconoParaPlato = (nombre = '') => {
   const t = nombre.toLowerCase();
@@ -137,14 +135,14 @@ export default function CargaMenuSemanal() {
             title="Semana anterior"
             className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition"
           >
-            <ChevronLeft className="w-4.5 h-4.5" />
+            <ChevronLeft className="w-[18px] h-[18px]" />
           </button>
           <button
             onClick={() => setOffset((o) => o + 1)}
             title="Semana siguiente"
             className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-500 hover:bg-stone-100 hover:text-stone-800 transition"
           >
-            <ChevronRight className="w-4.5 h-4.5" />
+            <ChevronRight className="w-[18px] h-[18px]" />
           </button>
         </div>
         <p className="font-semibold text-stone-800 text-sm sm:text-base">
@@ -248,18 +246,19 @@ export default function CargaMenuSemanal() {
                     {diaForm === iso ? (
                       <div className="space-y-2">
                         <div>
-                          <label className="text-xs text-stone-500 mb-1 block">Opción N°</label>
-                          <input
+                          <Input
+                            id="opcion-numero"
+                            label="Opción N°"
                             type="number"
                             min="1"
                             value={borrador.opcion_numero}
                             onChange={(e) =>
                               setBorrador({ ...borrador, opcion_numero: e.target.value })
                             }
-                            className={clasesInput}
+                            className="!text-xs"
                           />
                         </div>
-                        <input
+                        <Input
                           placeholder="Nombre del plato"
                           value={borrador.plato_nombre}
                           onChange={(e) =>
@@ -272,9 +271,8 @@ export default function CargaMenuSemanal() {
                             }
                           }}
                           autoFocus
-                          className={clasesInput}
                         />
-                        <input
+                        <Input
                           placeholder="Acompañamientos (opcional)"
                           value={borrador.descripcion}
                           onChange={(e) =>
@@ -286,7 +284,6 @@ export default function CargaMenuSemanal() {
                               agregarACola(iso);
                             }
                           }}
-                          className={clasesInput}
                         />
                         <div className="flex justify-end gap-1.5">
                           <Button
@@ -337,3 +334,4 @@ export default function CargaMenuSemanal() {
     </div>
   );
 }
+

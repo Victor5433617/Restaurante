@@ -2,11 +2,12 @@
 
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --color-cream-50: #f6f7f7;
   --color-cream-100: #eeeff0;
   --color-cream-200: #e3e5e7;
+  --color-cream-300: #d1d4d7;
 
   --color-brand-50: #eef7f3;
   --color-brand-100: #d8ece2;
@@ -23,10 +24,16 @@
   --color-espresso-700: #0a4a38;
   --color-espresso-800: #083e2f;
   --color-espresso-900: #06332a;
+  --color-espresso-950: #041f1a;
 }
 
 body {
   margin: 0;
   background-color: var(--color-cream-50);
   font-family: var(--font-sans);
+  font-feature-settings: "tnum";
+}
+
+::selection {
+  background: var(--color-brand-200);
 }

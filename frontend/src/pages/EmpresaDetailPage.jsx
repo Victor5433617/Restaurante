@@ -3,8 +3,9 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Building2 } from 'lucide-react';
 import * as empresaService from '../services/empresaService';
 import { useAuth } from '../context/AuthContext';
-import ConfiguracionEmpresa from '../components/ConfiguracionEmpresa';
-import PanelUsuariosEmpresa from '../components/PanelUsuariosEmpresa';
+import LogoUploader from '../components/LogoUploader';
+import UserManagementPanel from '../components/UserManagementPanel';
+import { logoUrl } from '../utils/urls';
 import SeccionAlmuerzosHoy from '../components/SeccionAlmuerzosHoy';
 import ConsumoHoyEmpresa from '../components/ConsumoHoyEmpresa';
 import ReporteConsumoDiario from '../components/ReporteConsumoDiario';
@@ -39,8 +40,13 @@ export default function EmpresaDetailPage() {
   const contenido =
     activa === 'configuracion' ? (
       <div className="space-y-6">
-        <ConfiguracionEmpresa empresa={empresa} onActualizado={cargar} />
-        <PanelUsuariosEmpresa empresa={empresa} />
+        <LogoUploader
+          titulo="Logo de la Empresa"
+          logoUrl={logoUrl(empresa.logo_url)}
+          placeholderLabel={empresa.nombre.charAt(0).toUpperCase()}
+          onSubir={(archivo) => empresaService.subirLogo(empresa.id, archivo).then(cargar)}
+        />
+        <UserManagementPanel scope="empresa" empresa={empresa} />
       </div>
     ) : activa === 'funcionarios' ? (
       <FuncionariosPage empresaFija={empresa} />
@@ -58,7 +64,7 @@ export default function EmpresaDetailPage() {
     );
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       <Link
         to="/"
         className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800 transition"

@@ -12,7 +12,8 @@ export default function Alert({ tipo = 'info', className = '', children }) {
   const { icono: Icono, clases } = TIPOS[tipo];
   return (
     <div
-      className={`flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-sm ring-1 ring-inset ${clases} ${className}`}
+      role={tipo === 'error' ? 'alert' : 'status'}
+      className={`flex items-start gap-2.5 rounded-xl px-3.5 py-2.5 text-sm ring-1 ring-inset ${clases} ${className}`}
     >
       <Icono className="w-4 h-4 mt-0.5 shrink-0" />
       <span>{children}</span>

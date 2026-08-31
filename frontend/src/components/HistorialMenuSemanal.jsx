@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Inbox } from 'lucide-react';
 import * as menuService from '../services/menuService';
 import Spinner from '../components/ui/Spinner';
 import Alert from '../components/ui/Alert';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import EmptyState from '../components/ui/EmptyState';
+import Button from '../components/ui/Button';
 import { fechaISO, formatoCorto } from '../utils/fechas';
 
 export default function HistorialMenuSemanal() {
@@ -35,37 +37,34 @@ export default function HistorialMenuSemanal() {
     <div className="space-y-6">
       <Card>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-sm font-medium text-stone-600 shrink-0" htmlFor="hist-desde">
-            Desde
-          </label>
-          <input
+          <Input
             id="hist-desde"
+            label="Desde"
             type="date"
             value={desde}
             onChange={(e) => setDesde(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 sm:max-w-[180px]"
+            className="sm:max-w-[180px]"
           />
-          <label className="text-sm font-medium text-stone-600 shrink-0" htmlFor="hist-hasta">
-            Hasta
-          </label>
-          <input
+          <Input
             id="hist-hasta"
+            label="Hasta"
             type="date"
             value={hasta}
             onChange={(e) => setHasta(e.target.value)}
-            className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 transition focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-200 sm:max-w-[180px]"
+            className="sm:max-w-[180px]"
           />
           {(desde || hasta) && (
-            <button
-              type="button"
+            <Button
+              variante="fantasma"
+              tamanio="sm"
               onClick={() => {
                 setDesde('');
                 setHasta('');
               }}
-              className="text-sm font-medium text-brand-700 hover:text-brand-800 transition sm:ml-auto"
+              className="sm:ml-auto"
             >
               Limpiar filtros
-            </button>
+            </Button>
           )}
         </div>
       </Card>
@@ -74,10 +73,7 @@ export default function HistorialMenuSemanal() {
 
       <Card titulo={`${filtrado.length} ${filtrado.length === 1 ? 'opción' : 'opciones'} registradas`}>
         {filtrado.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-stone-400">
-            <Inbox className="w-8 h-8" />
-            <p className="text-sm">No hay opciones de menú para el rango elegido.</p>
-          </div>
+          <EmptyState mensaje="No hay opciones de menú para el rango elegido." />
         ) : (
           <div className="overflow-x-auto -m-2 p-2">
             <table className="w-full text-sm">
@@ -91,7 +87,7 @@ export default function HistorialMenuSemanal() {
               </thead>
               <tbody>
                 {filtrado.map((m) => (
-                  <tr key={m.id} className="border-b border-stone-100 last:border-0">
+                  <tr key={m.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                     <td className="py-2.5 pr-4 text-stone-700 whitespace-nowrap tabular-nums">
                       {formatoCorto(m.fecha)}
                     </td>

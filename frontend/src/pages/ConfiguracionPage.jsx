@@ -4,8 +4,9 @@ import * as empresaService from '../services/empresaService';
 import PageHeader from '../components/ui/PageHeader';
 import Alert from '../components/ui/Alert';
 import Spinner from '../components/ui/Spinner';
-import ConfiguracionEmpresa from '../components/ConfiguracionEmpresa';
-import PanelUsuariosEmpresa from '../components/PanelUsuariosEmpresa';
+import LogoUploader from '../components/LogoUploader';
+import UserManagementPanel from '../components/UserManagementPanel';
+import { logoUrl } from '../utils/urls';
 
 export default function ConfiguracionPage() {
   const [empresa, setEmpresa] = useState(null);
@@ -38,8 +39,13 @@ export default function ConfiguracionPage() {
         <Spinner texto="Cargando configuración..." />
       ) : (
         <div className="space-y-6 max-w-4xl">
-          <ConfiguracionEmpresa empresa={empresa} onActualizado={cargar} />
-          <PanelUsuariosEmpresa empresa={empresa} />
+          <LogoUploader
+            titulo="Logo de la Empresa"
+            logoUrl={logoUrl(empresa.logo_url)}
+            placeholderLabel={empresa.nombre.charAt(0).toUpperCase()}
+            onSubir={(archivo) => empresaService.subirLogo(empresa.id, archivo).then(cargar)}
+          />
+          <UserManagementPanel scope="empresa" empresa={empresa} />
         </div>
       )}
     </div>

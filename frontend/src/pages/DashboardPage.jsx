@@ -107,7 +107,7 @@ export default function DashboardPage() {
         subtitulo={`Resumen de hoy — ${formatoLargo(new Date())}`}
       />
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {stats.map((s) => (
           <div
             key={s.etiqueta}
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                     {datos.filas.map((f) => {
                       const est = estadoVisual(f.almuerzos);
                       return (
-                        <tr key={f.id} className="border-b border-stone-100 last:border-0">
+                        <tr key={f.id} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
                           <td className="py-3 pr-4 font-medium text-stone-800">{f.nombre}</td>
                           <td className="py-3 pr-4 text-stone-600 text-right tabular-nums">
                             {f.funcionarios}
