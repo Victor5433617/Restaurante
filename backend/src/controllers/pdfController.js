@@ -71,7 +71,100 @@ function construirTabla(fechasBloque, listaFuncionarios) {
     </table>`;
 }
 
-function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, hasta, total }) {
+function rangoDeFechas(desde, hasta) {
+  const fechas = [];
+  const cursor = new Date(`${desde}T00:00:00`);
+  const fin = new Date(`${hasta}T00:00:00`);
+  while (cursor <= fin) {
+    fechas.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return fechas;
+}
+
+function construirResumenDiario({ desde, hasta, resumenPorTipo, comidasHabilitadas }) {
+  const fechas = rangoDeFechas(desde, hasta);
+  const porFecha = new Map();
+  for (const fila of resumenPorTipo) {
+    const fecha = fila.fecha.toISOString().slice(0, 10);
+    if (!porFecha.has(fecha)) porFecha.set(fecha, {});
+    porFecha.get(fecha)[fila.tipo_comida] = fila.cantidad;
+  }
+
+  const totales = {};
+  comidasHabilitadas.forEach((c) => { totales[c.tipo] = 0; });
+
+  const filasHtml = fechas
+    .map((f) => {
+      const datos = porFecha.get(f) || {};
+      const celdas = comidasHabilitadas
+        .map((c) => {
+          const cantidad = datos[c.tipo] || 0;
+          totales[c.tipo] += cantidad;
+          return `<td>${cantidad > 0 ? cantidad : '-'}</td>`;
+        })
+        .join('');
+      return `<tr><td class="fecha">${formatoFecha(f)}</td>${celdas}</tr>`;
+    })
+    .join('');
+
+  const totalFilaHtml = comidasHabilitadas.map((c) => `<td>${totales[c.tipo]}</td>`).join('');
+  const encabezadoHtml = comidasHabilitadas.map((c) => `<th>${c.etiqueta}</th>`).join('');
+
+  const numFilas = fechas.length;
+  const fontSize = numFilas > 35 ? Math.max(6, 11 - (numFilas - 35) * 0.12) : 11;
+  const padding = numFilas > 35 ? Math.max(1, 4 - (numFilas - 35) * 0.06) : 4;
+
+  return `<table class="resumen" style="font-size:${fontSize}px">
+      <style>table.resumen th, table.resumen td { padding: ${padding}px 8px; }</style>
+      <thead>
+        <tr><th>Fecha</th>${encabezadoHtml}</tr>
+      </thead>
+      <tbody>${filasHtml}</tbody>
+      <tfoot>
+        <tr class="total"><td class="fecha">TOTAL</td>${totalFilaHtml}</tr>
+      </tfoot>
+    </table>`;
+}
+
+function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, hasta, total, tipo, resumenPorTipo, comidasHabilitadas, tipoComidaEtiqueta }) {
+  if (tipo === 'resumen') {
+    return `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8" />
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; margin: 32px; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1f2937; padding-bottom: 16px; margin-bottom: 24px; }
+        header img { max-height: 60px; max-width: 140px; object-fit: contain; }
+        header .titulo { text-align: center; flex: 1; }
+        header h1 { font-size: 18px; margin: 0; }
+        header p { font-size: 12px; color: #6b7280; margin: 4px 0 0; }
+        table.resumen { width: 100%; max-width: 560px; margin: 0 auto; border-collapse: collapse; }
+        table.resumen th, table.resumen td { border: 1px solid #d1d5db; padding: 4px 8px; text-align: center; }
+        table.resumen th { background: #f9fafb; }
+        table.resumen td.fecha, table.resumen th:first-child { text-align: left; }
+        table.resumen tfoot td { font-weight: bold; background: #f3f4f6; }
+      </style>
+    </head>
+    <body>
+      <header>
+        ${logoComedorUri ? `<img src="${logoComedorUri}" alt="Logo comedor" />` : '<div></div>'}
+        <div class="titulo">
+          <h1>Reporte de Consumo — ${empresa.nombre}</h1>
+          <p>${formatoFecha(desde)} al ${formatoFecha(hasta)}</p>
+        </div>
+        ${logoEmpresaUri ? `<img src="${logoEmpresaUri}" alt="Logo empresa" />` : '<div></div>'}
+      </header>
+      ${comidasHabilitadas.length === 0
+        ? '<p>Esta empresa no tiene comidas habilitadas.</p>'
+        : construirResumenDiario({ desde, hasta, resumenPorTipo, comidasHabilitadas })}
+    </body>
+    </html>`;
+  }
+
   const { fechas, listaFuncionarios } = construirMatriz(filas);
   const bloquesFechas = partirEnBloques(fechas, FECHAS_POR_PAGINA);
   const unaSolaPagina = bloquesFechas.length <= 1;
@@ -123,7 +216,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
     <header>
       ${logoComedorUri ? `<img src="${logoComedorUri}" alt="Logo comedor" />` : '<div></div>'}
       <div class="titulo">
-        <h1>Reporte de Consumo — ${empresa.nombre}</h1>
+        <h1>Reporte de Consumo — ${empresa.nombre} (${tipoComidaEtiqueta})</h1>
         <p>${formatoFecha(desde)} al ${formatoFecha(hasta)}</p>
       </div>
       ${logoEmpresaUri ? `<img src="${logoEmpresaUri}" alt="Logo empresa" />` : '<div></div>'}
@@ -131,7 +224,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
 
     ${paginas}
 
-    <footer>Total de almuerzos registrados en el período: ${total}</footer>
+    <footer>Total de ${tipoComidaEtiqueta.toLowerCase()}s registrados en el período: ${total}</footer>
   </body>
   </html>`;
 }
@@ -139,7 +232,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
 async function generarReportePdf(req, res) {
   let navegador;
   try {
-    const { empresa_id: empresaId, desde, hasta } = req.query;
+    const { empresa_id: empresaId, desde, hasta, tipo, tipo_comida: tipoComidaQuery } = req.query;
     if (!empresaId || !desde || !hasta) {
       return res.status(400).json({ success: false, error: 'Faltan empresa_id, desde o hasta' });
     }
@@ -154,17 +247,35 @@ async function generarReportePdf(req, res) {
     }
 
     const configuracion = await configModel.obtener();
-    const filas = await reporteModel.obtenerReporte(empresaId, desde, hasta);
+    const tipoReporte = tipo === 'resumen' ? 'resumen' : 'detallado';
+
+    const COMIDAS = [
+      { tipo: 'desayuno', campo: 'habilita_desayuno', etiqueta: 'Desayuno' },
+      { tipo: 'almuerzo', campo: 'habilita_almuerzo', etiqueta: 'Almuerzo' },
+      { tipo: 'merienda', campo: 'habilita_merienda', etiqueta: 'Merienda' },
+      { tipo: 'cena', campo: 'habilita_cena', etiqueta: 'Cena' },
+    ];
+
+    const tiposValidos = ['desayuno', 'almuerzo', 'merienda', 'cena'];
+    const tipoComida = tiposValidos.includes(tipoComidaQuery) ? tipoComidaQuery : 'almuerzo';
+
+    const filas = tipoReporte === 'resumen' ? [] : await reporteModel.obtenerReporte(empresaId, desde, hasta, tipoComida);
     const total = filas.filter((f) => f.estado === '1').length;
+    const resumenPorTipo = tipoReporte === 'resumen' ? await reporteModel.obtenerResumenPorTipo(empresaId, desde, hasta) : [];
+    const comidasHabilitadas = COMIDAS.filter((c) => empresa[c.campo]);
 
     const html = construirHtml({
       empresa,
       logoComedorUri: logoADataUri(configuracion?.logo_comedor_url),
       logoEmpresaUri: logoADataUri(empresa.logo_url),
       filas,
+      resumenPorTipo,
+      comidasHabilitadas,
+      tipoComidaEtiqueta: COMIDAS.find((c) => c.tipo === tipoComida)?.etiqueta || 'Almuerzo',
       desde,
       hasta,
       total,
+      tipo: tipoReporte,
     });
 
     navegador = await puppeteer.launch({ headless: true });
@@ -172,7 +283,7 @@ async function generarReportePdf(req, res) {
     await pagina.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await pagina.pdf({
       format: 'A4',
-      landscape: true,
+      landscape: tipoReporte !== 'resumen',
       printBackground: true,
       margin: { top: '20px', bottom: '20px' },
     });

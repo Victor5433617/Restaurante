@@ -64,6 +64,22 @@ async function reporteP(req, res) {
     }
 }
 
+async function resumenComidasP(req, res) {
+    try {
+        const { empresa_id: empresaId, desde, hasta } = req.query;
+        if (!empresaId || !desde || !hasta) {
+            return res.status(400).json({ success: false, error: 'Faltan empresa_id, desde o hasta' });
+        }
+        if (empresaNoAutorizada(req, empresaId)) {
+            return res.status(403).json({ success: false, error: 'No podés ver el reporte de otra empresa' });
+        }
+        const filas = await reporteModel.obtenerResumenPorTipo(empresaId, desde, hasta);
+        res.status(200).json({ success: true, data: filas });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+}
+
 async function obtenerDetalleP(req, res) {
     try {
         const pedido = await pedidoModel.obtenerDetallePorId(req.params.id);
@@ -83,12 +99,21 @@ function puedeElegirFecha(req) {
     return req.usuario.rol === 'admin' || req.usuario.rol === 'encargada';
 }
 
+const TIPOS_COMIDA = ['desayuno', 'almuerzo', 'merienda', 'cena'];
+
 async function anotarP(req, res) {
     try {
         if (empresaNoAutorizada(req, req.body.empresa_id)) {
             return res.status(403).json({ success: false, error: 'No podés anotar funcionarios de otra empresa' });
         }
-        const dato = { ...req.body };
+        const tipoComida = req.body.tipo_comida || 'almuerzo';
+        if (!TIPOS_COMIDA.includes(tipoComida)) {
+            return res.status(400).json({ success: false, error: 'tipo_comida inválido' });
+        }
+        if (tipoComida === 'almuerzo' && !req.body.menu_semanal_id) {
+            return res.status(400).json({ success: false, error: 'Falta menu_semanal_id para el almuerzo' });
+        }
+        const dato = { ...req.body, tipo_comida: tipoComida };
         if (!puedeElegirFecha(req)) {
             delete dato.fecha;
         }
@@ -115,4 +140,4 @@ async function quitarP(req, res) {
     }
 }
 
-module.exports = { listarP, crearP, crearCompletoP, reporteP, obtenerDetalleP, anotarP, quitarP };
+module.exports = { listarP, crearP, crearCompletoP, reporteP, resumenComidasP, obtenerDetalleP, anotarP, quitarP };

@@ -58,6 +58,18 @@ async function subirLogo(req, res) {
     }
 }
 
+async function actualizarComidas(req, res) {
+    try {
+        const actualizada = await empresaModel.actualizarComidas(req.params.id, req.body);
+        if (!actualizada) {
+            return res.status(404).json({ success: false, error: 'Empresa no encontrada' });
+        }
+        res.status(200).json({ success: true, data: actualizada });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+}
+
 async function conteoHoy(req, res) {
     try {
         const empresaId = req.usuario.rol !== 'admin' ? req.usuario.empresa_id : null;
@@ -68,4 +80,4 @@ async function conteoHoy(req, res) {
     }
 }
 
-module.exports = { listar, Crear, editar, eliminar, subirLogo, conteoHoy };
+module.exports = { listar, Crear, editar, eliminar, subirLogo, conteoHoy, actualizarComidas };

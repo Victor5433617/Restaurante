@@ -45,4 +45,17 @@ async function menuHoyM(req, res) {
     }
 }
 
-module.exports = { listarM, crearM, menuHoyM, editarM };
+async function menuPorFechaM(req, res) {
+    try {
+        const { fecha } = req.query;
+        if (!fecha) {
+            return res.status(400).json({ success: false, error: 'Falta la fecha' });
+        }
+        const menuDia = await menuModel.menuPorFecha(fecha);
+        res.status(200).json({ success: true, data: menuDia });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+}
+
+module.exports = { listarM, crearM, menuHoyM, menuPorFechaM, editarM };

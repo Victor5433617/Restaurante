@@ -33,6 +33,22 @@ async function eliminar(id) {
    return restulado.rows;
 }
 
+async function actualizarComidas(id, dato) {
+    const resultado = await pool.query(
+        `UPDATE empresas
+         SET habilita_desayuno = $1, habilita_almuerzo = $2, habilita_merienda = $3, habilita_cena = $4
+         WHERE id = $5 RETURNING *`,
+        [
+            Boolean(dato.habilita_desayuno),
+            Boolean(dato.habilita_almuerzo),
+            Boolean(dato.habilita_merienda),
+            Boolean(dato.habilita_cena),
+            id,
+        ]
+    );
+    return resultado.rows[0];
+}
+
 async function subirLogo(id,logoUrl) {
     const restulado = await pool.query('UPDATE empresas SET logo_url = $1 WHERE id = $2 RETURNING *',
          [logoUrl, id] );
@@ -44,7 +60,7 @@ async function conteoHoy(empresa_id) {
         'select   e.id AS empresa_id,   e.nombre AS empresa_nombre, '
          + 'COUNT(dp.id) AS total_pedidos FROM empresas e  '
          +'LEFT JOIN pedidos_diarios pd ON pd.empresa_id = e.id AND pd.fecha = CURRENT_DATE '
-         + 'LEFT JOIN detalles_pedidos dp ON dp.pedido_id = pd.id ';
+         + "LEFT JOIN detalles_pedidos dp ON dp.pedido_id = pd.id AND dp.tipo_comida = 'almuerzo' ";
 
     if (empresa_id) {
         const resultado = await pool.query(
@@ -58,5 +74,5 @@ async function conteoHoy(empresa_id) {
     return resultado.rows;
 }
 
-module.exports = {ObtenerTodos, CrearEmpresas,editarEmpresas,eliminar, subirLogo, conteoHoy};
+module.exports = {ObtenerTodos, CrearEmpresas,editarEmpresas,eliminar, subirLogo, conteoHoy, actualizarComidas};
 

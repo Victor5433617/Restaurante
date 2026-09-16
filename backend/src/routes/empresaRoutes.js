@@ -12,5 +12,6 @@ router.post('/', verificarToken, verificarRol('admin'), validarEmpresa, empresaC
 router.put('/:id', verificarToken, verificarRol('admin'), validarEmpresa, empresaController.editar);
 router.delete('/:id', verificarToken, verificarRol('admin'), empresaController.eliminar);
 router.post('/:id/logo', verificarToken, verificarRol('admin', 'encargada'), upload.single('logo'), empresaController.subirLogo)
+router.put('/:id/comidas', verificarToken, verificarRol('admin'), empresaController.actualizarComidas);
 
 module.exports = router;

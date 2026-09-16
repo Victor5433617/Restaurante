@@ -30,4 +30,10 @@ async function menuHoy() {
     return resultado.rows;
 }
 
-module.exports = {ObtenerTodos, crear,menuHoy, editar};
+async function menuPorFecha(fecha) {
+    const resultado = await pool.query(
+        'SELECT * FROM menu_semanal WHERE fecha = $1 ORDER BY opcion_numero', [fecha]);
+    return resultado.rows;
+}
+
+module.exports = {ObtenerTodos, crear, menuHoy, menuPorFecha, editar};

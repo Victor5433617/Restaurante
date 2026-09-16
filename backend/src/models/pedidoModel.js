@@ -28,13 +28,14 @@ async function obtenerDetallePorId(id) {
            dp.id,
            dp.funcionario_id,
            f.nombre_completo,
+           dp.tipo_comida,
            dp.menu_semanal_id,
            ms.opcion_numero,
            ms.plato_nombre,
            dp.observacion
          FROM detalles_pedidos dp
          JOIN funcionarios f ON f.id = dp.funcionario_id
-         JOIN menu_semanal ms ON ms.id = dp.menu_semanal_id
+         LEFT JOIN menu_semanal ms ON ms.id = dp.menu_semanal_id
          WHERE dp.pedido_id = $1
          ORDER BY f.nombre_completo`,
     [id]
@@ -97,14 +98,15 @@ async function anotarFuncionario(dato) {
       [dato.empresa_id, dato.fecha || null]
     );
     const pedido = resPedido.rows[0];
+    const tipoComida = dato.tipo_comida || 'almuerzo';
 
     const resDetalle = await client.query(
-      `INSERT INTO detalles_pedidos (pedido_id, funcionario_id, menu_semanal_id, observacion)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (pedido_id, funcionario_id)
+      `INSERT INTO detalles_pedidos (pedido_id, funcionario_id, tipo_comida, menu_semanal_id, observacion)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (pedido_id, funcionario_id, tipo_comida)
        DO UPDATE SET menu_semanal_id = EXCLUDED.menu_semanal_id, observacion = EXCLUDED.observacion
        RETURNING *`,
-      [pedido.id, dato.funcionario_id, dato.menu_semanal_id, dato.observacion || '']
+      [pedido.id, dato.funcionario_id, tipoComida, dato.menu_semanal_id || null, dato.observacion || '']
     );
 
     await client.query('COMMIT');
@@ -125,8 +127,9 @@ async function quitarFuncionario(dato) {
        AND pd.empresa_id = $1
        AND pd.fecha = COALESCE($3::date, CURRENT_DATE)
        AND dp.funcionario_id = $2
+       AND dp.tipo_comida = $4
      RETURNING dp.id`,
-    [dato.empresa_id, dato.funcionario_id, dato.fecha || null]
+    [dato.empresa_id, dato.funcionario_id, dato.fecha || null, dato.tipo_comida || 'almuerzo']
   );
   return resultado.rows;
 }

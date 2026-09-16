@@ -7,6 +7,10 @@ CREATE TABLE empresas (
     ruc_identificador VARCHAR(50) UNIQUE,
     logo_url VARCHAR(200),
     estado boolean DEFAULT true,
+    habilita_desayuno boolean DEFAULT false,
+    habilita_almuerzo boolean DEFAULT true,
+    habilita_merienda boolean DEFAULT false,
+    habilita_cena boolean DEFAULT false,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -39,9 +43,10 @@ CREATE TABLE detalles_pedidos(
     id SERIAL PRIMARY KEY,
     pedido_id INTEGER NOT NULL REFERENCES pedidos_diarios(id) ON DELETE CASCADE,
     funcionario_id INTEGER NOT NULL REFERENCES funcionarios(id) ON DELETE CASCADE,
-    menu_semanal_id INTEGER NOT NULL REFERENCES menu_semanal(id) ON DELETE RESTRICT,
+    tipo_comida VARCHAR(20) NOT NULL DEFAULT 'almuerzo' CHECK (tipo_comida IN ('desayuno', 'almuerzo', 'merienda', 'cena')),
+    menu_semanal_id INTEGER REFERENCES menu_semanal(id) ON DELETE RESTRICT,
     observacion TEXT,
-    UNIQUE(pedido_id, funcionario_id)
+    UNIQUE(pedido_id, funcionario_id, tipo_comida)
 );
 
 
