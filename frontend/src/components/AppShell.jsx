@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   UtensilsCrossed,
@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Badge from './ui/Badge';
+import * as configService from '../services/configService';
+import { logoUrl } from '../utils/urls';
 
 const ITEMS = [
   { to: '/dashboard', etiqueta: 'Dashboard', icono: LayoutDashboard, ocultoParaAdmin: true },
@@ -37,7 +39,14 @@ const ITEMS_EMPRESA = [
   { tab: 'configuracion', etiqueta: 'Configuración', icono: Settings },
 ];
 
-function LogoMarca() {
+function LogoMarca({ logoComedorUrl }) {
+  if (logoComedorUrl) {
+    return (
+      <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
+        <img src={logoComedorUrl} alt="Logo del comedor" className="w-full h-full object-contain p-0.5" />
+      </span>
+    );
+  }
   return (
     <span className="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-sm shrink-0">
       <UtensilsCrossed className="w-[18px] h-[18px]" />
@@ -47,6 +56,14 @@ function LogoMarca() {
 
 export default function AppShell({ children }) {
   const { usuario, cerrarSesion } = useAuth();
+  const [logoComedorUrl, setLogoComedorUrl] = useState(null);
+
+  useEffect(() => {
+    configService
+      .obtenerConfiguracionPublica()
+      .then((cfg) => setLogoComedorUrl(logoUrl(cfg?.logo_comedor_url)))
+      .catch(() => setLogoComedorUrl(null));
+  }, []);
   const [menuMas, setMenuMas] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -82,10 +99,10 @@ export default function AppShell({ children }) {
         <header className="fixed top-0 inset-x-0 z-40 h-16 bg-espresso-900 flex items-center justify-between gap-4 px-4 sm:px-6 shadow-md shadow-black/10">
           <div className="flex items-center gap-2 sm:gap-6 min-w-0">
             <Link to="/" className="flex items-center gap-2.5 shrink-0">
-              <LogoMarca />
+              <LogoMarca logoComedorUrl={logoComedorUrl} />
               <span className="leading-tight hidden sm:block">
-                <p className="text-cream-50 font-semibold text-[15px] tracking-tight">Almuerzos</p>
-                <p className="text-brand-300 text-xs font-medium">Corporativos</p>
+                <p className="text-cream-50 font-semibold text-[15px] tracking-tight">Comensa</p>
+                <p className="text-brand-300 text-xs font-medium">App</p>
               </span>
             </Link>
             <nav className="flex items-center gap-1 overflow-x-auto">
@@ -133,10 +150,10 @@ export default function AppShell({ children }) {
     <div className="min-h-screen bg-cream-50">
       <aside className="hidden lg:flex fixed inset-y-0 left-0 w-64 bg-espresso-900 flex-col z-40 shadow-xl shadow-black/10">
         <Link to="/dashboard" className="flex items-center gap-2.5 px-5 h-16 border-b border-white/10 shrink-0">
-          <LogoMarca />
+          <LogoMarca logoComedorUrl={logoComedorUrl} />
           <span className="leading-tight">
-            <p className="text-cream-50 font-semibold text-[15px] tracking-tight">Almuerzos</p>
-            <p className="text-brand-300 text-xs font-medium">Corporativos</p>
+            <p className="text-cream-50 font-semibold text-[15px] tracking-tight">Comensa</p>
+            <p className="text-brand-300 text-xs font-medium">App</p>
           </span>
         </Link>
 
@@ -191,9 +208,9 @@ export default function AppShell({ children }) {
       <div className="lg:pl-64 flex flex-col min-h-screen">
         <header className="lg:hidden sticky top-0 z-40 bg-espresso-900 pl-4 pr-2 h-14 flex items-center justify-between shadow-md shadow-black/10">
           <Link to="/dashboard" className="flex items-center gap-2.5">
-            <LogoMarca />
+            <LogoMarca logoComedorUrl={logoComedorUrl} />
             <span className="font-semibold text-cream-50 text-[15px] tracking-tight">
-              Almuerzos Corporativos
+              Comensa App
             </span>
           </Link>
           <div className="flex items-center gap-1">

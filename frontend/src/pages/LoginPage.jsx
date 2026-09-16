@@ -1,10 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UtensilsCrossed, ChefHat, Coffee, Croissant } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Alert from '../components/ui/Alert';
+import * as configService from '../services/configService';
+import { logoUrl } from '../utils/urls';
+
+function LogoLogin({ logoComedorUrl, className }) {
+  if (logoComedorUrl) {
+    return (
+      <span className={`${className} bg-white overflow-hidden ring-1 ring-black/10`}>
+        <img src={logoComedorUrl} alt="Logo del comedor" className="w-full h-full object-contain p-1" />
+      </span>
+    );
+  }
+  return (
+    <span className={`${className} bg-brand-600 text-white`}>
+      <UtensilsCrossed className="w-7 h-7" />
+    </span>
+  );
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState(() => localStorage.getItem('recordarEmail') || '');
@@ -13,8 +30,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [aviso, setAviso] = useState('');
   const [cargando, setCargando] = useState(false);
+  const [logoComedorUrl, setLogoComedorUrl] = useState(null);
   const { iniciarSesion } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    configService
+      .obtenerConfiguracionPublica()
+      .then((cfg) => setLogoComedorUrl(logoUrl(cfg?.logo_comedor_url)))
+      .catch(() => setLogoComedorUrl(null));
+  }, []);
 
   const manejarSubmit = async (e) => {
     e.preventDefault();
@@ -49,13 +74,14 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 max-w-md px-10 text-center">
-          <span className="w-14 h-14 mx-auto rounded-2xl bg-brand-600 text-white flex items-center justify-center shadow-xl shadow-black/30">
-            <UtensilsCrossed className="w-7 h-7" />
-          </span>
+          <LogoLogin
+            logoComedorUrl={logoComedorUrl}
+            className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center shadow-xl shadow-black/30"
+          />
           <h1 className="text-4xl font-bold text-cream-50 mt-6 leading-tight tracking-tight">
-            Almuerzos Corporativos
+            Comensa App
           </h1>
-          <p className="font-medium text-brand-300 mt-5">Gestión de almuerzos para empresas</p>
+          <p className="font-medium text-brand-300 mt-5">Gestión de comedores para empresas</p>
           <p className="text-stone-400 mt-2 leading-relaxed">
             Simplificamos la gestión de tu comedor corporativo
           </p>
@@ -78,11 +104,12 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12 bg-cream-50">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex flex-col items-center mb-8">
-            <span className="w-12 h-12 rounded-2xl bg-espresso-900 text-brand-300 flex items-center justify-center">
-              <UtensilsCrossed className="w-6 h-6" />
-            </span>
+            <LogoLogin
+              logoComedorUrl={logoComedorUrl}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+            />
             <p className="text-xl font-bold text-espresso-900 mt-3 tracking-tight">
-              Almuerzos Corporativos
+              Comensa App
             </p>
           </div>
 

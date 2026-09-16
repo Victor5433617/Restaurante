@@ -33,6 +33,17 @@ export const sumarDias = (fecha, n) => {
   return d;
 };
 
+export const rangoFechas = (desdeIso, hastaIso) => {
+  const fechas = [];
+  const cursor = new Date(`${desdeIso}T00:00:00`);
+  const fin = new Date(`${hastaIso}T00:00:00`);
+  while (cursor <= fin) {
+    fechas.push(fechaISO(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return fechas;
+};
+
 export const lunesDe = (fecha) => {
   const d = new Date(fecha);
   d.setHours(0, 0, 0, 0);

@@ -5,6 +5,7 @@ import * as empresaService from '../services/empresaService';
 import { useAuth } from '../context/AuthContext';
 import LogoUploader from '../components/LogoUploader';
 import UserManagementPanel from '../components/UserManagementPanel';
+import ConfiguracionComidas from '../components/ConfiguracionComidas';
 import { logoUrl } from '../utils/urls';
 import SeccionAlmuerzosHoy from '../components/SeccionAlmuerzosHoy';
 import ConsumoHoyEmpresa from '../components/ConsumoHoyEmpresa';
@@ -46,6 +47,9 @@ export default function EmpresaDetailPage() {
           placeholderLabel={empresa.nombre.charAt(0).toUpperCase()}
           onSubir={(archivo) => empresaService.subirLogo(empresa.id, archivo).then(cargar)}
         />
+        {esAdmin && (
+          <ConfiguracionComidas empresa={empresa} onActualizado={(actualizada) => setEmpresa(actualizada)} />
+        )}
         <UserManagementPanel scope="empresa" empresa={empresa} />
       </div>
     ) : activa === 'funcionarios' ? (

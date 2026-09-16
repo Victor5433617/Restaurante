@@ -7,3 +7,7 @@ export function logoUrl(nombreArchivo) {
   if (!nombreArchivo) return null;
   return `${API_ORIGIN()}/uploads/logos/${nombreArchivo}`;
 }
+
+export function faviconUrl() {
+  return `${API_ORIGIN()}/uploads/favicon/favicon.png`;
+}

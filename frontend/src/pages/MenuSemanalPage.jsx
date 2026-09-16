@@ -8,9 +8,9 @@ import HistorialMenuSemanal from '../components/HistorialMenuSemanal';
 import UserManagementPanel from '../components/UserManagementPanel';
 import LogoUploader from '../components/LogoUploader';
 import * as configService from '../services/configService';
+import { logoUrl } from '../utils/urls';
 import Spinner from '../components/ui/Spinner';
 import Alert from '../components/ui/Alert';
-import { logoUrl } from '../utils/urls';
 
 function ConfiguracionGeneralWrapper() {
   const [configuracion, setConfiguracion] = useState(null);

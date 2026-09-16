@@ -7,10 +7,12 @@ export const anotarFuncionario = (datos) => api.post('/pedidos/anotar', datos).t
 export const quitarFuncionario = (datos) => api.post('/pedidos/quitar', datos).then((r) => r.data.data);
 export const obtenerReporte = (empresaId, desde, hasta) =>
   api.get('/pedidos/reporte', { params: { empresa_id: empresaId, desde, hasta } }).then((r) => r.data.data);
+export const obtenerResumenComidas = (empresaId, desde, hasta) =>
+  api.get('/pedidos/resumen-comidas', { params: { empresa_id: empresaId, desde, hasta } }).then((r) => r.data.data);
 
-export const generarReportePdf = async (empresaId, desde, hasta) => {
+export const generarReportePdf = async (empresaId, desde, hasta, tipo = 'detallado', tipoComida = 'almuerzo') => {
   const respuesta = await api.get('/pedidos/reporte/pdf', {
-    params: { empresa_id: empresaId, desde, hasta },
+    params: { empresa_id: empresaId, desde, hasta, tipo, tipo_comida: tipoComida },
     responseType: 'blob',
   });
   const url = window.URL.createObjectURL(new Blob([respuesta.data], { type: 'application/pdf' }));

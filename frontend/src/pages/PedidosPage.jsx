@@ -58,7 +58,7 @@ export default function PedidosPage({ empresaFija }) {
       {empresaFija ? (
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-stone-800">Pedidos diarios</h2>
-          <Link to="/pedido">
+          <Link to={`/pedido?empresa_id=${empresaFija.id}`}>
             <Button>
               <Plus className="w-4 h-4" />
               Cargar pedido

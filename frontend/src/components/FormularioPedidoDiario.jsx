@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, ChefHat, Search, Pencil, LogOut } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ClipboardList, ChefHat, Search, Pencil, LogOut, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as empresaService from '../services/empresaService';
 import * as funcionarioService from '../services/funcionarioService';
@@ -14,27 +15,31 @@ import Input from './ui/Input';
 import Select from './ui/Select';
 import Modal from './ui/Modal';
 import EmptyState from './ui/EmptyState';
-import { hoyISO } from '../utils/fechas';
+import { hoyISO, formatoLargo } from '../utils/fechas';
 
-const fechaLarga = () => {
-  const fecha = new Date().toLocaleDateString('es', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-  return fecha.charAt(0).toUpperCase() + fecha.slice(1);
-};
+const COMIDAS = [
+  { tipo: 'desayuno', campo: 'habilita_desayuno', etiqueta: 'Desayuno' },
+  { tipo: 'almuerzo', campo: 'habilita_almuerzo', etiqueta: 'Almuerzo' },
+  { tipo: 'merienda', campo: 'habilita_merienda', etiqueta: 'Merienda' },
+  { tipo: 'cena', campo: 'habilita_cena', etiqueta: 'Cena' },
+];
 
 export default function FormularioPedidoDiario() {
   const { usuario, cerrarSesion } = useAuth();
+  const [searchParams] = useSearchParams();
+  const empresaFijaId = searchParams.get('empresa_id');
+  const puedeElegirFecha = usuario.rol === 'admin' || usuario.rol === 'encargada';
   const [empresas, setEmpresas] = useState([]);
-  const [empresaId, setEmpresaId] = useState(usuario.empresa_id ?? '');
+  const [empresaId, setEmpresaId] = useState(usuario.empresa_id ?? empresaFijaId ?? '');
+  const [fecha, setFecha] = useState(hoyISO());
   const [funcionarios, setFuncionarios] = useState([]);
   const [menu, setMenu] = useState([]);
-  const [selecciones, setSelecciones] = useState({});
+  const [seleccionesPorTipo, setSeleccionesPorTipo] = useState({});
+  const [tipoActivo, setTipoActivo] = useState('almuerzo');
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
   const [guardandoModal, setGuardandoModal] = useState(false);
+  const [funcionarioMarcando, setFuncionarioMarcando] = useState(null);
   const [error, setError] = useState('');
 
   const [modalFuncionario, setModalFuncionario] = useState(null);
@@ -43,21 +48,41 @@ export default function FormularioPedidoDiario() {
 
   useEffect(() => {
     const cargarBase = async () => {
-      const [todosFuncionarios, menuDeHoy] = await Promise.all([
+      const [todosFuncionarios, todasEmpresas] = await Promise.all([
         funcionarioService.listarFuncionarios(),
-        menuService.menuHoy(),
+        empresaService.listarEmpresas(),
       ]);
       setFuncionarios(todosFuncionarios);
-      setMenu(menuDeHoy);
-
-      if (usuario.rol === 'admin') {
-        const todasEmpresas = await empresaService.listarEmpresas();
-        setEmpresas(todasEmpresas);
-      }
+      setEmpresas(todasEmpresas);
       setCargando(false);
     };
     cargarBase();
-  }, [usuario.rol]);
+  }, []);
+
+  const empresaActual = empresas.find((e) => e.id === Number(empresaId));
+  const comidasHabilitadas = COMIDAS.filter((c) => empresaActual?.[c.campo]);
+
+  useEffect(() => {
+    if (comidasHabilitadas.length === 0) return;
+    if (!comidasHabilitadas.some((c) => c.tipo === tipoActivo)) {
+      setTipoActivo(comidasHabilitadas[0].tipo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [empresaId, empresaActual]);
+
+  useEffect(() => {
+    const cargarMenu = async () => {
+      try {
+        const menuDelDia = fecha === hoyISO()
+          ? await menuService.menuHoy()
+          : await menuService.menuPorFecha(fecha);
+        setMenu(menuDelDia);
+      } catch {
+        setMenu([]);
+      }
+    };
+    cargarMenu();
+  }, [fecha]);
 
   useEffect(() => {
     const intervalo = setInterval(async () => {
@@ -74,48 +99,55 @@ export default function FormularioPedidoDiario() {
   useEffect(() => {
     const rehidratar = async () => {
       if (!empresaId) {
-        setSelecciones({});
+        setSeleccionesPorTipo({});
         return;
       }
       try {
         const pedidos = await pedidoService.listarPedidos();
-        const pedidoHoy = pedidos.find(
-          (p) => p.empresa_id === Number(empresaId) && p.fecha?.slice(0, 10) === hoyISO()
+        const pedidoDelDia = pedidos.find(
+          (p) => p.empresa_id === Number(empresaId) && p.fecha?.slice(0, 10) === fecha
         );
-        if (!pedidoHoy) {
-          setSelecciones({});
+        if (!pedidoDelDia) {
+          setSeleccionesPorTipo({});
           return;
         }
-        const detalle = await pedidoService.obtenerDetallePedido(pedidoHoy.id);
-        const nuevasSelecciones = {};
+        const detalle = await pedidoService.obtenerDetallePedido(pedidoDelDia.id);
+        const nuevas = {};
         for (const d of detalle.detalles) {
-          nuevasSelecciones[d.funcionario_id] = {
+          const tipo = d.tipo_comida || 'almuerzo';
+          if (!nuevas[tipo]) nuevas[tipo] = {};
+          nuevas[tipo][d.funcionario_id] = {
             pidio: true,
             menu_semanal_id: d.menu_semanal_id,
             observacion: d.observacion || '',
           };
         }
-        setSelecciones(nuevasSelecciones);
+        setSeleccionesPorTipo(nuevas);
       } catch {
-        setError('No se pudieron cargar los pedidos ya guardados de hoy.');
+        setError('No se pudieron cargar los pedidos ya guardados de ese día.');
       }
     };
     rehidratar();
-  }, [empresaId]);
+  }, [empresaId, fecha]);
 
   const funcionariosEmpresa = funcionarios
     .filter((f) => f.empresa_id === Number(empresaId))
     .filter((f) => f.nombre_completo.toLowerCase().includes(busqueda.toLowerCase()));
 
+  const selecciones = seleccionesPorTipo[tipoActivo] || {};
+
   const cambiarSeleccion = (funcionarioId, campo, valor) => {
-    setSelecciones((prev) => ({
+    setSeleccionesPorTipo((prev) => ({
       ...prev,
-      [funcionarioId]: { ...prev[funcionarioId], [campo]: valor },
+      [tipoActivo]: {
+        ...prev[tipoActivo],
+        [funcionarioId]: { ...prev[tipoActivo]?.[funcionarioId], [campo]: valor },
+      },
     }));
   };
 
-  const totalSeleccionados = Object.values(selecciones).filter(
-    (sel) => sel?.pidio && sel?.menu_semanal_id
+  const totalSeleccionados = Object.values(selecciones).filter((sel) =>
+    tipoActivo === 'almuerzo' ? sel?.pidio && sel?.menu_semanal_id : sel?.pidio
   ).length;
 
   const abrirModal = (f) => {
@@ -137,6 +169,8 @@ export default function FormularioPedidoDiario() {
         funcionario_id: modalFuncionario.id,
         menu_semanal_id: Number(draftMenuId),
         observacion: draftObservacion || '',
+        tipo_comida: 'almuerzo',
+        ...(puedeElegirFecha ? { fecha } : {}),
       });
       cambiarSeleccion(modalFuncionario.id, 'pidio', true);
       cambiarSeleccion(modalFuncionario.id, 'menu_semanal_id', draftMenuId);
@@ -157,6 +191,8 @@ export default function FormularioPedidoDiario() {
       await pedidoService.quitarFuncionario({
         empresa_id: Number(empresaId),
         funcionario_id: modalFuncionario.id,
+        tipo_comida: 'almuerzo',
+        ...(puedeElegirFecha ? { fecha } : {}),
       });
       cambiarSeleccion(modalFuncionario.id, 'pidio', false);
       cerrarModal();
@@ -167,18 +203,50 @@ export default function FormularioPedidoDiario() {
     }
   };
 
+  const alternarSimple = async (f) => {
+    if (!empresaId) return;
+    const yaMarcado = selecciones[f.id]?.pidio;
+    setError('');
+    setFuncionarioMarcando(f.id);
+    try {
+      if (yaMarcado) {
+        await pedidoService.quitarFuncionario({
+          empresa_id: Number(empresaId),
+          funcionario_id: f.id,
+          tipo_comida: tipoActivo,
+          ...(puedeElegirFecha ? { fecha } : {}),
+        });
+        cambiarSeleccion(f.id, 'pidio', false);
+      } else {
+        await pedidoService.anotarFuncionario({
+          empresa_id: Number(empresaId),
+          funcionario_id: f.id,
+          tipo_comida: tipoActivo,
+          ...(puedeElegirFecha ? { fecha } : {}),
+        });
+        cambiarSeleccion(f.id, 'pidio', true);
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'No se pudo actualizar la marca.');
+    } finally {
+      setFuncionarioMarcando(null);
+    }
+  };
+
   if (cargando) {
     return <Spinner texto="Preparando el pedido de hoy..." />;
   }
 
   const opcionesEmpresa = empresas.map((e) => ({ valor: String(e.id), etiqueta: e.nombre }));
+  const empresaBloqueada = usuario.rol === 'admin' && Boolean(empresaFijaId);
+  const tituloPagina = puedeElegirFecha ? 'Cargar Pedido' : 'Cargar Pedido de Hoy';
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
       <PageHeader
         icono={ClipboardList}
-        titulo="Cargar Pedido de Hoy"
-        subtitulo={fechaLarga()}
+        titulo={empresaBloqueada && empresaActual ? `${tituloPagina} — ${empresaActual.nombre}` : tituloPagina}
+        subtitulo={formatoLargo(fecha)}
         acciones={
           usuario.rol === 'funcionario' && (
             <Button variante="secundario" tamanio="sm" onClick={cerrarSesion}>
@@ -189,19 +257,55 @@ export default function FormularioPedidoDiario() {
         }
       />
 
-      {usuario.rol === 'admin' && (
-        <Select
-          id="empresa"
-          label="Empresa"
-          value={empresaId}
-          onChange={(e) => setEmpresaId(e.target.value)}
-          opciones={opcionesEmpresa}
-          placeholder="Elegir empresa..."
-          className="sm:max-w-xs"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        {usuario.rol === 'admin' && !empresaBloqueada && (
+          <Select
+            id="empresa"
+            label="Empresa"
+            value={empresaId}
+            onChange={(e) => setEmpresaId(e.target.value)}
+            opciones={opcionesEmpresa}
+            placeholder="Elegir empresa..."
+            className="sm:max-w-xs"
+          />
+        )}
+        {puedeElegirFecha && (
+          <Input
+            id="fecha-pedido"
+            label="Fecha del pedido"
+            type="date"
+            value={fecha}
+            max={hoyISO()}
+            onChange={(e) => setFecha(e.target.value)}
+            className="sm:max-w-[180px]"
+          />
+        )}
+      </div>
+
+      {puedeElegirFecha && fecha !== hoyISO() && (
+        <Alert tipo="aviso">Estás cargando un pedido de un día anterior ({formatoLargo(fecha)}), no el de hoy.</Alert>
       )}
 
       {error && <Alert tipo="error">{error}</Alert>}
+
+      {empresaId && comidasHabilitadas.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {comidasHabilitadas.map((c) => (
+            <button
+              key={c.tipo}
+              type="button"
+              onClick={() => setTipoActivo(c.tipo)}
+              className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition ${
+                tipoActivo === c.tipo
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-white border border-stone-200 text-stone-600 hover:border-brand-300'
+              }`}
+            >
+              {c.etiqueta}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6 items-start">
         <div className="space-y-3 lg:col-span-2">
@@ -239,6 +343,48 @@ export default function FormularioPedidoDiario() {
                   <tbody>
                     {funcionariosEmpresa.map((f) => {
                       const sel = selecciones[f.id];
+                      if (tipoActivo !== 'almuerzo') {
+                        const marcado = Boolean(sel?.pidio);
+                        return (
+                          <tr
+                            key={f.id}
+                            onClick={() => alternarSimple(f)}
+                            className="border-b border-stone-100 last:border-0 cursor-pointer hover:bg-cream-50/60 transition"
+                          >
+                            <td className="py-3 pl-5 pr-4">
+                              <span className="flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-full bg-brand-50 ring-1 ring-brand-100 text-brand-700 text-xs font-semibold flex items-center justify-center uppercase shrink-0">
+                                  {f.nombre_completo.charAt(0)}
+                                </span>
+                                <span className="font-medium text-stone-800">{f.nombre_completo}</span>
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4">
+                              {marcado ? (
+                                <Badge color="brand">Confirmado</Badge>
+                              ) : (
+                                <span className="text-stone-400">Sin marcar</span>
+                              )}
+                            </td>
+                            <td className="py-3 pr-5 text-right">
+                              <Button
+                                type="button"
+                                variante={marcado ? 'secundario' : 'primario'}
+                                tamanio="sm"
+                                cargando={funcionarioMarcando === f.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  alternarSimple(f);
+                                }}
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                {marcado ? 'Quitar' : 'Marcar'}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      }
+
                       const tienePedido = sel?.pidio && sel?.menu_semanal_id;
                       const opcionElegida = tienePedido
                         ? menu.find((m) => String(m.id) === String(sel.menu_semanal_id))
@@ -304,29 +450,31 @@ export default function FormularioPedidoDiario() {
           )}
         </div>
 
-        <section className="bg-white rounded-xl border border-stone-200 shadow-sm p-5 lg:sticky lg:top-20">
-          <h2 className="flex items-center gap-2 font-display font-semibold text-stone-800 mb-3">
-            <ChefHat className="w-5 h-5 text-brand-500" />
-            Menú de hoy
-          </h2>
-          {menu.length === 0 ? (
-            <Alert tipo="aviso">Todavía no se cargó el menú de hoy.</Alert>
-          ) : (
-            <div className="space-y-2.5">
-              {menu.map((m) => (
-                <div key={m.id} className="rounded-lg border border-stone-200 bg-cream-50/60 p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge color="brand">Opción {m.opcion_numero}</Badge>
+        {tipoActivo === 'almuerzo' && (
+          <section className="bg-white rounded-xl border border-stone-200 shadow-sm p-5 lg:sticky lg:top-20">
+            <h2 className="flex items-center gap-2 font-display font-semibold text-stone-800 mb-3">
+              <ChefHat className="w-5 h-5 text-brand-500" />
+              Menú de hoy
+            </h2>
+            {menu.length === 0 ? (
+              <Alert tipo="aviso">Todavía no se cargó el menú de hoy.</Alert>
+            ) : (
+              <div className="space-y-2.5">
+                {menu.map((m) => (
+                  <div key={m.id} className="rounded-lg border border-stone-200 bg-cream-50/60 p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge color="brand">Opción {m.opcion_numero}</Badge>
+                    </div>
+                    <p className="text-sm font-medium text-stone-800">{m.plato_nombre}</p>
+                    {m.descripcion && (
+                      <p className="text-xs text-stone-500 mt-0.5 leading-snug">{m.descripcion}</p>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-stone-800">{m.plato_nombre}</p>
-                  {m.descripcion && (
-                    <p className="text-xs text-stone-500 mt-0.5 leading-snug">{m.descripcion}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {modalFuncionario && (

@@ -11,3 +11,4 @@ export const subirLogo = (id, file) => {
   formData.append('logo', file);
   return api.post(`/empresas/${id}/logo`, formData).then((r) => r.data.data);
 };
+export const actualizarComidas = (id, datos) => api.put(`/empresas/${id}/comidas`, datos).then((r) => r.data.data);

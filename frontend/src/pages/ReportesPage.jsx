@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown } from 'lucide-react';
+import { FileDown, Sheet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import * as pedidoService from '../services/pedidoService';
 import * as empresaService from '../services/empresaService';
@@ -13,7 +13,8 @@ import Select from '../components/ui/Select';
 import Input from '../components/ui/Input';
 import EmptyState from '../components/ui/EmptyState';
 import ModalVistaPreviaPdf from '../components/ui/ModalVistaPreviaPdf';
-import { fechaISO, formatoCorto, lunesDe, sumarDias } from '../utils/fechas';
+import { fechaISO, formatoCorto, lunesDe, sumarDias, rangoFechas } from '../utils/fechas';
+import { descargarCsv } from '../utils/csv';
 
 export default function ReportesPage({ empresaFija }) {
   const { usuario } = useAuth();
@@ -35,6 +36,10 @@ export default function ReportesPage({ empresaFija }) {
   const [generandoPdf, setGenerandoPdf] = useState(false);
   const [errorPdf, setErrorPdf] = useState('');
   const [vistaPreviaPdf, setVistaPreviaPdf] = useState(null);
+  const [tipoReporte, setTipoReporte] = useState('detallado');
+  const [tipoComida, setTipoComida] = useState('almuerzo');
+  const [resumenComidas, setResumenComidas] = useState([]);
+  const [cargandoResumenComidas, setCargandoResumenComidas] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -89,6 +94,29 @@ export default function ReportesPage({ empresaFija }) {
     };
   }, [empresas, filtroEmpresa, desde, hasta]);
 
+  useEffect(() => {
+    if (!filtroEmpresa || !desde || !hasta) {
+      setResumenComidas([]);
+      return;
+    }
+    let vigente = true;
+    setCargandoResumenComidas(true);
+    pedidoService
+      .obtenerResumenComidas(filtroEmpresa, desde, hasta)
+      .then((filas) => {
+        if (vigente) setResumenComidas(filas);
+      })
+      .catch(() => {
+        if (vigente) setResumenComidas([]);
+      })
+      .finally(() => {
+        if (vigente) setCargandoResumenComidas(false);
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [filtroEmpresa, desde, hasta]);
+
   const filas = useMemo(() => {
     return pedidos
       .filter((p) => (!desde || fechaISO(p.fecha) >= desde) && (!hasta || fechaISO(p.fecha) <= hasta))
@@ -104,6 +132,72 @@ export default function ReportesPage({ empresaFija }) {
   const nombreEmpresa = (id) =>
     empresas.find((e) => e.id === id)?.nombre || `Empresa #${id}`;
 
+  const empresaSeleccionada = empresas.find((e) => e.id === Number(filtroEmpresa));
+  const COMIDAS = [
+    { tipo: 'desayuno', campo: 'habilita_desayuno', etiqueta: 'Desayuno' },
+    { tipo: 'almuerzo', campo: 'habilita_almuerzo', etiqueta: 'Almuerzo' },
+    { tipo: 'merienda', campo: 'habilita_merienda', etiqueta: 'Merienda' },
+    { tipo: 'cena', campo: 'habilita_cena', etiqueta: 'Cena' },
+  ];
+  const comidasHabilitadas = empresaSeleccionada
+    ? COMIDAS.filter((c) => empresaSeleccionada[c.campo])
+    : COMIDAS.filter((c) => c.tipo === 'almuerzo');
+
+  useEffect(() => {
+    if (comidasHabilitadas.length === 0) return;
+    if (!comidasHabilitadas.some((c) => c.tipo === tipoComida)) {
+      setTipoComida(comidasHabilitadas[0].tipo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroEmpresa, empresaSeleccionada]);
+
+  const tablaComidas = useMemo(() => {
+    if (comidasHabilitadas.length <= 1) return null;
+    const mapa = {};
+    resumenComidas.forEach((r) => {
+      const f = fechaISO(r.fecha);
+      if (!mapa[f]) mapa[f] = {};
+      mapa[f][r.tipo_comida] = r.cantidad;
+    });
+    const totales = {};
+    comidasHabilitadas.forEach((c) => { totales[c.tipo] = 0; });
+    const filasTabla = rangoFechas(desde, hasta).map((f) => {
+      const datos = mapa[f] || {};
+      const valores = comidasHabilitadas.map((c) => {
+        const cantidad = datos[c.tipo] || 0;
+        totales[c.tipo] += cantidad;
+        return cantidad;
+      });
+      return { fecha: f, valores };
+    });
+    return { filasTabla, totales };
+  }, [comidasHabilitadas, resumenComidas, desde, hasta]);
+
+  const exportarCsvPrincipal = () => {
+    const encabezados = [
+      'Fecha',
+      ...(!empresaFija ? ['Empresa'] : []),
+      'Funcionarios',
+      'Almuerzos',
+    ];
+    const filasCsv = filas.map((f) => [
+      formatoCorto(f.fecha),
+      ...(!empresaFija ? [nombreEmpresa(f.empresa_id)] : []),
+      conteoFuncionarios[f.empresa_id] ?? 0,
+      f.almuerzos,
+    ]);
+    filasCsv.push(['TOTAL', ...(!empresaFija ? [''] : []), '', totalAlmuerzos]);
+    descargarCsv(`reporte-${desde}-a-${hasta}.csv`, encabezados, filasCsv);
+  };
+
+  const exportarCsvComidas = () => {
+    if (!tablaComidas) return;
+    const encabezados = ['Fecha', ...comidasHabilitadas.map((c) => c.etiqueta)];
+    const filasCsv = tablaComidas.filasTabla.map((f) => [formatoCorto(f.fecha), ...f.valores]);
+    filasCsv.push(['TOTAL', ...comidasHabilitadas.map((c) => tablaComidas.totales[c.tipo])]);
+    descargarCsv(`resumen-comidas-${desde}-a-${hasta}.csv`, encabezados, filasCsv);
+  };
+
   const generarPdf = async () => {
     setErrorPdf('');
     if (!filtroEmpresa) {
@@ -112,7 +206,7 @@ export default function ReportesPage({ empresaFija }) {
     }
     setGenerandoPdf(true);
     try {
-      const resultado = await pedidoService.generarReportePdf(filtroEmpresa, desde, hasta);
+      const resultado = await pedidoService.generarReportePdf(filtroEmpresa, desde, hasta, tipoReporte, tipoComida);
       setVistaPreviaPdf(resultado);
     } catch (err) {
       setErrorPdf(err.response?.data?.error || 'No se pudo generar el PDF.');
@@ -182,14 +276,120 @@ export default function ReportesPage({ empresaFija }) {
               <FileDown className="w-4 h-4" />
               Generar PDF
             </Button>
+            <Button
+              variante="secundario"
+              onClick={exportarCsvPrincipal}
+              disabled={filas.length === 0}
+              className="flex-1"
+            >
+              <Sheet className="w-4 h-4" />
+              Exportar CSV
+            </Button>
           </div>
         </div>
+
+        <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-stone-100">
+          <span className="text-xs font-medium uppercase tracking-wide text-stone-400">Tipo de reporte</span>
+          <label className="flex items-center gap-1.5 text-sm text-stone-700 cursor-pointer">
+            <input
+              type="radio"
+              name="tipo-reporte"
+              value="detallado"
+              checked={tipoReporte === 'detallado'}
+              onChange={() => setTipoReporte('detallado')}
+              className="accent-brand-600"
+            />
+            Detallado (por funcionario)
+          </label>
+          <label className="flex items-center gap-1.5 text-sm text-stone-700 cursor-pointer">
+            <input
+              type="radio"
+              name="tipo-reporte"
+              value="resumen"
+              checked={tipoReporte === 'resumen'}
+              onChange={() => setTipoReporte('resumen')}
+              className="accent-brand-600"
+            />
+            Resumen (todo junto)
+          </label>
+        </div>
+
+        {tipoReporte === 'detallado' && comidasHabilitadas.length > 1 && (
+          <div className="flex flex-wrap items-center gap-4 mt-3 pt-3 border-t border-stone-100">
+            <span className="text-xs font-medium uppercase tracking-wide text-stone-400">Comida</span>
+            {comidasHabilitadas.map((c) => (
+              <label key={c.tipo} className="flex items-center gap-1.5 text-sm text-stone-700 cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo-comida"
+                  value={c.tipo}
+                  checked={tipoComida === c.tipo}
+                  onChange={() => setTipoComida(c.tipo)}
+                  className="accent-brand-600"
+                />
+                {c.etiqueta}
+              </label>
+            ))}
+          </div>
+        )}
         {errorPdf && (
           <Alert tipo="error" className="mt-3">
             {errorPdf}
           </Alert>
         )}
       </Card>
+
+      {tablaComidas && (
+        <Card
+          titulo="Resumen por comida"
+          subtitulo={`${empresaSeleccionada?.nombre ?? ''} — ${formatoCorto(desde)} al ${formatoCorto(hasta)}`}
+          acciones={
+            <Button variante="secundario" tamanio="sm" onClick={exportarCsvComidas}>
+              <Sheet className="w-4 h-4" />
+              Exportar CSV
+            </Button>
+          }
+        >
+          {cargandoResumenComidas ? (
+            <Spinner texto="Cargando resumen..." />
+          ) : (
+            <div className="overflow-x-auto -m-2 p-2">
+              <table className="w-full text-sm min-w-[420px]">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-stone-400 border-b border-stone-200">
+                    <th className="py-2.5 pr-4 font-medium">Fecha</th>
+                    {comidasHabilitadas.map((c) => (
+                      <th key={c.tipo} className="py-2.5 pr-4 font-medium text-right">{c.etiqueta}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tablaComidas.filasTabla.map((f) => (
+                    <tr key={f.fecha} className="border-b border-stone-100 last:border-0 hover:bg-stone-50/50 transition">
+                      <td className="py-2.5 pr-4 text-stone-700 tabular-nums">{formatoCorto(f.fecha)}</td>
+                      {f.valores.map((valor, i) => (
+                        <td key={comidasHabilitadas[i].tipo} className="py-2.5 pr-4 text-right tabular-nums text-stone-600">
+                          {valor > 0 ? valor : '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-stone-200">
+                    <td className="py-3 pr-4 font-semibold text-stone-700">TOTAL</td>
+                    {comidasHabilitadas.map((c) => (
+                      <td key={c.tipo} className="py-3 pr-4 text-right font-bold text-brand-700 tabular-nums">
+                        {tablaComidas.totales[c.tipo]}
+                      </td>
+                    ))}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
 
       <Card titulo={`${filas.length} ${filas.length === 1 ? 'registro' : 'registros'}`}>
         {filas.length === 0 ? (

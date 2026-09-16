@@ -31,7 +31,7 @@ export default function SeccionAlmuerzosHoy({ empresa }) {
         let detalles = [];
         if (pedidoHoy) {
           const detalle = await pedidoService.obtenerDetallePedido(pedidoHoy.id);
-          detalles = detalle.detalles;
+          detalles = detalle.detalles.filter((d) => (d.tipo_comida || 'almuerzo') === 'almuerzo');
         }
 
         const idsConDetalle = new Set(detalles.map((d) => d.funcionario_id));
