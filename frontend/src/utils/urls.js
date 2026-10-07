@@ -5,6 +5,7 @@ const API_ORIGIN = () => {
 
 export function logoUrl(nombreArchivo) {
   if (!nombreArchivo) return null;
+  if (/^https?:\/\//.test(nombreArchivo)) return nombreArchivo;
   return `${API_ORIGIN()}/uploads/logos/${nombreArchivo}`;
 }
 

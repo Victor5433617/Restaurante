@@ -3,16 +3,20 @@ const path = require('path');
 
 const EXTENSIONES_PERMITIDAS = ['.png', '.jpg', '.jpeg', '.webp'];
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, './uploads/logos/');
-    },
-    filename: (req, file, cb) => {
-        const extension = path.extname(file.originalname).toLowerCase();
-        const nombreUnico = Date.now() + extension;
-        cb(null, nombreUnico);
-    },
-});
+const usaCloudinary = Boolean(process.env.CLOUDINARY_CLOUD_NAME);
+
+const storage = usaCloudinary
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+          destination: (req, file, cb) => {
+              cb(null, './uploads/logos/');
+          },
+          filename: (req, file, cb) => {
+              const extension = path.extname(file.originalname).toLowerCase();
+              const nombreUnico = Date.now() + extension;
+              cb(null, nombreUnico);
+          },
+      });
 
 const upload = multer({
     storage,

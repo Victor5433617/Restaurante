@@ -5,9 +5,10 @@ const reporteModel = require('../models/reporteModel');
 const empresaModel = require('../models/empresaModel');
 const configModel = require('../models/configModel');
 
-function logoADataUri(nombreArchivo) {
-  if (!nombreArchivo) return null;
-  const ruta = path.join(__dirname, '..', '..', 'uploads', 'logos', nombreArchivo);
+function logoADataUri(valor) {
+  if (!valor) return null;
+  if (/^https?:\/\//.test(valor)) return valor;
+  const ruta = path.join(__dirname, '..', '..', 'uploads', 'logos', valor);
   if (!fs.existsSync(ruta)) return null;
   const extension = path.extname(ruta).slice(1) || 'png';
   const base64 = fs.readFileSync(ruta).toString('base64');
@@ -127,6 +128,9 @@ function construirResumenDiario({ desde, hasta, resumenPorTipo, comidasHabilitad
     </table>`;
 }
 
+const FIRMA_HTML = '<p class="firma-app">Generado con Comensa App</p>';
+const FIRMA_CSS = '.firma-app { margin-top: 18px; text-align: center; font-size: 9px; color: #9ca3af; }';
+
 function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, hasta, total, tipo, resumenPorTipo, comidasHabilitadas, tipoComidaEtiqueta }) {
   if (tipo === 'resumen') {
     return `
@@ -147,6 +151,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
         table.resumen th { background: #f9fafb; }
         table.resumen td.fecha, table.resumen th:first-child { text-align: left; }
         table.resumen tfoot td { font-weight: bold; background: #f3f4f6; }
+        ${FIRMA_CSS}
       </style>
     </head>
     <body>
@@ -161,6 +166,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
       ${comidasHabilitadas.length === 0
         ? '<p>Esta empresa no tiene comidas habilitadas.</p>'
         : construirResumenDiario({ desde, hasta, resumenPorTipo, comidasHabilitadas })}
+      ${FIRMA_HTML}
     </body>
     </html>`;
   }
@@ -210,6 +216,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
       .estado.si { color: #15803d; }
       .estado.no { color: #b91c1c; }
       footer { margin-top: 24px; border-top: 2px solid #1f2937; padding-top: 12px; text-align: right; font-size: 13px; font-weight: bold; }
+      ${FIRMA_CSS}
     </style>
   </head>
   <body>
@@ -225,6 +232,7 @@ function construirHtml({ empresa, logoComedorUri, logoEmpresaUri, filas, desde, 
     ${paginas}
 
     <footer>Total de ${tipoComidaEtiqueta.toLowerCase()}s registrados en el período: ${total}</footer>
+    ${FIRMA_HTML}
   </body>
   </html>`;
 }
@@ -278,7 +286,11 @@ async function generarReportePdf(req, res) {
       tipo: tipoReporte,
     });
 
-    navegador = await puppeteer.launch({ headless: true });
+    navegador = await puppeteer.launch({
+      headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
     const pagina = await navegador.newPage();
     await pagina.setContent(html, { waitUntil: 'networkidle0' });
     const pdfBuffer = await pagina.pdf({

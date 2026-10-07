@@ -3,3 +3,6 @@ node_modules/
 backend/.env
 backend/uploads/logos/*
 !backend/uploads/logos/.gitkeep
+
+backend/uploads/favicon/*
+!backend/uploads/favicon/.gitkeep

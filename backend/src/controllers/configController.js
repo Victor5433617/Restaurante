@@ -1,4 +1,5 @@
 const configModel = require('../models/configModel');
+const { guardarLogo } = require('../utils/subirImagen');
 
 async function obtener(req, res) {
   try {
@@ -14,7 +15,8 @@ async function subirLogoComedor(req, res) {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'No se subió ningún archivo' });
     }
-    const configuracion = await configModel.actualizarLogoComedor(req.file.filename);
+    const urlLogo = await guardarLogo(req);
+    const configuracion = await configModel.actualizarLogoComedor(urlLogo);
     res.status(200).json({ success: true, data: configuracion });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

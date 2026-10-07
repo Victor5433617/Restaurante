@@ -1,4 +1,5 @@
 const empresaModel = require('../models/empresaModel');
+const { guardarLogo } = require('../utils/subirImagen');
 
 async function listar(req, res) {
     try {
@@ -48,7 +49,8 @@ async function subirLogo(req, res) {
         if (req.usuario.rol !== 'admin' && Number(req.params.id) !== req.usuario.empresa_id) {
             return res.status(403).json({ success: false, error: 'No podés modificar el logo de otra empresa' });
         }
-        const subirLogo = await empresaModel.subirLogo(req.params.id, req.file.filename);
+        const urlLogo = await guardarLogo(req);
+        const subirLogo = await empresaModel.subirLogo(req.params.id, urlLogo);
         if (!subirLogo) {
             return res.status(404).json({ success: false, error: 'No encontrada' });
         }

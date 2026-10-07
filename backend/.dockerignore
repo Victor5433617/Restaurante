@@ -1,0 +1,8 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+uploads/logos/*
+uploads/favicon/*
+!uploads/logos/.gitkeep
+!uploads/favicon/.gitkeep
