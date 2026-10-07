@@ -46,6 +46,11 @@ const apiLimiter = rateLimit({
     message: { success: false, error: 'Demasiadas solicitudes. Intentá de nuevo más tarde.' },
 });
 
+// endpoint liviano para servicios de ping (evitar que Render duerma la instancia free)
+app.get('/health', (req, res) => {
+    res.status(200).json({ success: true, status: 'ok' });
+});
+
 // rutas
 app.use('/uploads', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
