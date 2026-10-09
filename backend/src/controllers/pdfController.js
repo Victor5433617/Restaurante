@@ -87,7 +87,7 @@ function construirResumenDiario({ desde, hasta, resumenPorTipo, comidasHabilitad
   const fechas = rangoDeFechas(desde, hasta);
   const porFecha = new Map();
   for (const fila of resumenPorTipo) {
-    const fecha = fila.fecha.toISOString().slice(0, 10);
+    const fecha = typeof fila.fecha === 'string' ? fila.fecha.slice(0, 10) : fila.fecha.toISOString().slice(0, 10);
     if (!porFecha.has(fecha)) porFecha.set(fecha, {});
     porFecha.get(fecha)[fila.tipo_comida] = fila.cantidad;
   }
