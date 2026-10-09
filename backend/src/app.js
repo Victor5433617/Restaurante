@@ -51,6 +51,20 @@ app.get('/health', (req, res) => {
     res.status(200).json({ success: true, status: 'ok' });
 });
 
+app.get('/api/time', (req, res) => {
+    const serverTime = new Date();
+    
+    res.status(200).json({
+        success: true,
+        message: "Horario del servidor obtenido con éxito",
+        data: {
+            iso: serverTime.toISOString(),              // Formato internacional estándar (UTC)
+            localString: serverTime.toLocaleString(),  // Formato legible según la configuración del server
+            timestamp: serverTime.getTime()            // Tiempo en milisegundos (Unix timestamp)
+        }
+    });
+});
+
 // rutas
 app.use('/uploads', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
